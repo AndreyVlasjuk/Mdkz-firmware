@@ -1,19 +1,19 @@
 {
-  "version": "0.5.1",
+  "version": "0.5.2",
   "mdkz_cab_display": {
-    "version": "0.5.1",
-    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.1/mdkz_cab_display.bin"
+    "version": "0.5.2",
+    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.2/mdkz_cab_display.bin"
   },
   "mdkz_cab_node": {
-    "version": "0.5.1",
-    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.1/mdkz_cab_node.bin"
+    "version": "0.5.2",
+    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.2/mdkz_cab_node.bin"
   },
   "mdkz_cab_node_esp32": {
-    "version": "0.5.1",
-    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.1/mdkz_cab_node_esp32.bin"
+    "version": "0.5.2",
+    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.2/mdkz_cab_node_esp32.bin"
   },
   "mdkz_relay_node": {
-    "version": "0.5.1",
-    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.1/mdkz_relay_node.bin"
+    "version": "0.5.2",
+    "url": "https://raw.githubusercontent.com/AndreyVlasjuk/Mdkz-firmware/main/v0.5.2/mdkz_relay_node.bin"
   }
 }
