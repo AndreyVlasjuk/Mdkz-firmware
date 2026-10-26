@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МДКЗ — сервіс</title>
+<!--
+  Сторінка сервісного відділу: машини МДКЗ, що зараз у мережі, їхній стан і журнал.
+  Пульти самі надсилають дані на MQTT-брокер (firmware/cab-display/main/remote.h); ця сторінка
+  лише слухає брокер через WebSocket. Лише перегляд: керувати машиною звідси не можна.
+  Брокер і корінь каналів мають збігатися з прошивкою (REMOTE_DEFAULT_URI, REMOTE_TOPIC_ROOT).
+-->
+<style>
+  :root { --bg:#14171c; --panel:#1c2027; --line:#2a2f37; --text:#e8eaed; --mut:#8a94a2;
+          --ok:#2ecc71; --bad:#ff5a52; --warn:#f5a623; --acc:#5aa9ff; }
+  * { box-sizing:border-box }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); }
+  header { display:flex; gap:12px; align-items:center; padding:10px 16px; background:#0f1216; flex-wrap:wrap }
+  header h1 { font-size:18px; margin:0 12px 0 0 }
+  header .mut { font-size:13px }
+  main { display:grid; grid-template-columns:300px 1fr; gap:12px; padding:12px; }
+  @media (max-width:800px) { main { grid-template-columns:1fr } }
+  .card { background:var(--panel); border-radius:10px; padding:12px }
+  .mut { color:var(--mut) } .ok { color:var(--ok) } .bad { color:var(--bad) } .warn { color:var(--warn) }
+  .m { padding:8px 10px; border-radius:8px; cursor:pointer; margin-bottom:6px; background:#232832 }
+  .m.sel { outline:2px solid var(--acc) }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; background:var(--mut) }
+  .dot.on { background:var(--ok) }
+  h2 { font-size:15px; color:var(--mut); margin:16px 0 6px }
+  table { border-collapse:collapse; width:100%; font-size:14px }
+  td, th { padding:5px 6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top }
+  button, input { font:inherit; border-radius:8px; border:1px solid var(--line); background:#232832; color:var(--text);
+                  padding:6px 12px }
+  button { cursor:pointer } button:hover { border-color:var(--acc) }
+  pre { white-space:pre-wrap; font-size:13px; background:#15181d; padding:8px; border-radius:8px; max-height:300px;
+        overflow:auto }
+  .issue { padding:6px 10px; border-radius:8px; margin:4px 0; background:#2a2316; border-left:4px solid var(--warn) }
+  .issue.bad { background:#2c1a1a; border-left-color:var(--bad); color:var(--text) }
+  .big { font-size:20px; font-weight:600 }
+</style>
+</head>
+<body>
+<header>
+  <h1>МДКЗ — сервіс</h1>
+  <span id="conn" class="mut">підключаюсь до сервера…</span>
+  <span class="mut" style="margin-left:auto">Пошук VIN:</span>
+  <input id="filter" placeholder="VIN" size="18">
+</header>
+<main>
+  <section class="card">
+    <div class="mut" style="margin-bottom:8px">Машини (зелена крапка — пульт зараз у мережі)</div>
+    <div id="list"><div class="mut">Ще жодної машини. Пульт з'явиться тут, коли оператор підключить його до Wi-Fi з
+      інтернетом (а VIN введено при випуску).</div></div>
+  </section>
+  <section class="card" id="detail"><div class="mut">Виберіть машину ліворуч.</div></section>
+</main>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+const BROKER = 'wss://broker.emqx.io:8084/mqtt';
+const ROOT = 'bshm-mdkz/v1';
+const machines = {};   // vin -> {online, status, seen}
+let selected = null;
+let logParts = null;   // збирання журналу
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cls = (b, t, f) => `<span class="${b ? 'ok' : (f || 'bad')}">${t}</span>`;
+
+const client = mqtt.connect(BROKER, { clientId: 'mdkz-service-' + Math.random().toString(16).slice(2, 10),
+                                      reconnectPeriod: 4000 });
+client.on('connect', () => {
+  $('conn').innerHTML = cls(true, 'сервер на зв\'язку');
+  client.subscribe([ROOT + '/+/online', ROOT + '/+/status', ROOT + '/+/log']);
+});
+client.on('reconnect', () => { $('conn').innerHTML = cls(false, 'немає зв\'язку з сервером, повторюю…', 'warn'); });
+client.on('message', (topic, payload) => {
+  const parts = topic.split('/');
+  const vin = parts[parts.length - 2], leaf = parts[parts.length - 1];
+  const m = machines[vin] ||= { online: false, status: null, seen: 0 };
+  const text = new TextDecoder().decode(payload);
+  if (leaf === 'online') m.online = text === '1';
+  if (leaf === 'status') { try { m.status = JSON.parse(text); m.seen = Date.now(); } catch (e) {} }
+  if (leaf === 'log' && vin === selected && logParts) { collectLog(text); return; }
+  renderList();
+  if (vin === selected) renderDetail();
+});
+
+function renderList() {
+  const f = $('filter').value.trim().toUpperCase();
+  const vins = Object.keys(machines).filter(v => !f || v.includes(f)).sort((a, b) =>
+    (machines[b].online - machines[a].online) || a.localeCompare(b));
+  if (!vins.length) return;
+  $('list').innerHTML = vins.map(v => {
+    const m = machines[v], s = m.status;
+    return `<div class="m ${v === selected ? 'sel' : ''}" onclick="select('${esc(v)}')">
+      <span class="dot ${m.online ? 'on' : ''}"></span><b>${esc(v)}</b><br>
+      <span class="mut">${esc(s?.model || '')} ${s ? '· ' + esc(s.ver) : ''}
+      ${m.seen ? '· ' + new Date(m.seen).toLocaleString() : ''}</span></div>`;
+  }).join('');
+}
+$('filter').oninput = renderList;
+
+function select(vin) {
+  selected = vin; logParts = null;
+  client.publish(`${ROOT}/${vin}/cmd`, 'status');
+  renderList(); renderDetail();
+}
+
+/* Чому функція не працює: по ланцюжку від шини до реле. */
+function whyOff(s, f) {
+  const n = s.nodes[f.node] || {};
+  if (!s.bus.ok) return ['bad', 'екран не бачить шину CAN'];
+  if (!n.online) return ['bad', `немає зв'язку з вузлом «${n.name}»`];
+  if (s.cab_estop && !f.light) return ['bad', 'натиснуто STOP/E-STOP на пульті'];
+  if (!n.hyd && !f.light) return ['bad', `«${n.name}»: немає живлення гідравліки (вхід IN1) — живлення надбудови, петля E-STOP, запобіжник`];
+  if (n.conflict && f.hold) return ['bad', `«${n.name}»: конфлікт команд — дві різні команди в одній групі`];
+  if (f.fail) return ['bad', 'вузол не підтвердив команду: реле не ввімкнулось (профіль, другий модуль реле, вихід)'];
+  if (f.pend) return ['warn', 'команду надіслано, вузол ще не підтвердив'];
+  if (f.held) return ['warn', 'кнопку тримають, але вузол реле не ввімкнув — дивіться прапори вузла'];
+  return ['mut', 'вимкнено (не вмикали)'];
+}
+
+function issues(s) {
+  const out = [];
+  if (!s.bus.ok) out.push(['bad', 'Немає шини CAN на екрані']);
+  if (s.bus.tec >= 128) out.push(['bad', 'Ніхто не підтверджує кадри екрана (TEC ≥ 128): обрив CAN_H/CAN_L або термінатора']);
+  if (!s.cab.online) out.push(['bad', 'Пульт (вузол кабіни) не на зв\'язку']);
+  if (s.stop.latched) out.push(['bad', `STOP пульта зафіксовано (введено ${s.stop.progress} з ${s.stop.len} кроків скидання)`]);
+  s.nodes.forEach(n => {
+    if (!n.watched) return;
+    if (!n.online) out.push(['bad', `Немає зв'язку з вузлом «${n.name}»`]);
+    else if (!n.hyd) out.push(['warn', `«${n.name}»: немає живлення гідравліки`]);
+    if (n.online && n.warn && n.hyd) out.push(['warn', `«${n.name}»: ${n.warn}`]);
+    /* E-STOP вузла без живлення — це те саме «немає живлення», не дублюємо */
+    const flags = n.hyd || s.cab_estop ? n.flags : n.flags.split(', ').filter(f => f !== 'E-STOP').join(', ');
+    if (n.online && flags) out.push(['warn', `«${n.name}»: ${flags}`]);
+  });
+  return out;
+}
+
+function renderDetail() {
+  const m = machines[selected];
+  if (!m) return;
+  const s = m.status;
+  if (!s) {
+    $('detail').innerHTML = `<div class="big">${esc(selected)}</div><p class="mut">Стану ще немає.</p>`;
+    return;
+  }
+  const h = s.hours === null ? '—' : (s.hours / 60).toFixed(1) + ' год';
+  const iss = issues(s);
+  const fns = s.fns.filter(f => f.shown);
+  $('detail').innerHTML = `
+    <div class="big">${esc(s.vin)} <span class="dot ${m.online ? 'on' : ''}"></span>
+      <span class="${m.online ? 'ok' : 'mut'}" style="font-size:14px">${m.online ? 'у мережі' : 'не в мережі'}</span></div>
+    <div class="mut">${esc(s.model)} · екран ${esc(s.ver)} (${esc(s.id)}) · пульт ${esc(s.cab.ver || '—')} ·
+      ${s.nodes.map(n => esc(n.name) + ' ' + esc(n.ver || '—')).join(' · ')}</div>
+    <div class="mut">Мотогодини КВП: <b style="color:var(--text)">${h}</b> · екран працює
+      ${Math.floor(s.up / 3600)} год ${Math.floor(s.up / 60 % 60)} хв · стан від ${new Date(m.seen).toLocaleTimeString()}</div>
+    <p><button onclick="client.publish('${ROOT}/${esc(selected)}/cmd','status')">Оновити стан</button>
+       <button onclick="getLog()">Завантажити журнал</button> <span id="logst" class="mut"></span></p>
+    <h2>Що не так</h2>
+    ${iss.length ? iss.map(i => `<div class="issue ${i[0]}">${esc(i[1])}</div>`).join('') : cls(true, 'Помилок немає')}
+    <h2>Функції — чому не працює</h2>
+    <table>${fns.map(f => {
+      const w = f.on ? ['ok', 'увімкнено'] : whyOff(s, f);
+      return `<tr><td>${esc(f.name)}</td><td class="${w[0]}">${esc(w[1])}</td></tr>`;
+    }).join('')}</table>
+    <h2>Вузли</h2>
+    <table><tr><th>Вузол</th><th>Стан</th><th>Реле</th><th>Входи</th></tr>
+    ${s.nodes.map(n => `<tr><td>${esc(n.name)}${n.watched ? '' : ' <span class="mut">(не стежимо)</span>'}</td>
+      <td>${n.online ? cls(n.hyd, n.hyd ? 'на зв\'язку' : 'без живлення гідравліки', 'warn') : cls(false, 'немає зв\'язку')}
+      ${esc(n.flags)}</td><td>${esc(n.out || '—')}</td><td>${esc(n.in)}</td></tr>`).join('')}</table>
+    <h2>Шина і пульт</h2>
+    <table>
+      <tr><td>Шина CAN</td><td>${cls(s.bus.ok, s.bus.ok ? 'працює' : 'немає')} · прийнято ${s.bus.rx},
+        помилок ${s.bus.err}, TEC ${s.bus.tec}, REC ${s.bus.rec}, bus-off ${s.bus.off}</td></tr>
+      <tr><td>Пульт</td><td>${cls(s.cab.online, s.cab.online ? 'на зв\'язку' : 'немає')} ${esc(s.cab.flags)}</td></tr>
+      <tr><td>Ручка, кнопки</td><td>${esc(s.cab.inputs)}</td></tr>
+    </table>
+    <h2>Журнал (останні)</h2><pre>${esc(s.log.join('\n'))}</pre>`;
+}
+
+function getLog() {
+  logParts = { lines: [], got: 0, of: 0 };
+  $('logst').textContent = 'запит надіслано…';
+  client.publish(`${ROOT}/${selected}/cmd`, 'log');
+}
+
+function collectLog(text) {
+  let p; try { p = JSON.parse(text); } catch (e) { return; }
+  logParts.lines[p.part - 1] = p.lines;
+  logParts.got++; logParts.of = p.of;
+  $('logst').textContent = `отримано ${logParts.got} з ${p.of}`;
+  if (logParts.got >= p.of) {
+    const blob = new Blob([logParts.lines.flat().join('\n') + '\n'], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `journal-${selected}.txt`;
+    a.click();
+    $('logst').textContent = 'журнал збережено';
+    logParts = null;
+  }
+}
+</script>
+</body>
+</html>
