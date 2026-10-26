@@ -120,6 +120,20 @@ function whyOff(s, f) {
   return ['mut', 'вимкнено (не вмикали)'];
 }
 
+/* Прапори вузла: що з них несправність, а що звичайна робота (тримають джойстик, оновлення). */
+const INFO_FLAGS = {
+  'потрібен тиск': 'гідравліка в роботі',
+  'чекає відпускання': 'чекає, поки відпустять органи керування',
+  'сервіс': 'оновлення: виходи вимкнено',
+};
+function splitFlags(n, s) {
+  const all = n.flags ? n.flags.split(', ') : [];
+  /* E-STOP вузла без живлення — це те саме «немає живлення», не дублюємо */
+  const bad = all.filter(f => !(f in INFO_FLAGS) && (f !== 'E-STOP' || n.hyd || s.cab_estop));
+  const info = all.filter(f => f in INFO_FLAGS).map(f => INFO_FLAGS[f]);
+  return { bad, info };
+}
+
 function issues(s) {
   const out = [];
   if (!s.bus.ok) out.push(['bad', 'Немає шини CAN на екрані']);
@@ -131,9 +145,8 @@ function issues(s) {
     if (!n.online) out.push(['bad', `Немає зв'язку з вузлом «${n.name}»`]);
     else if (!n.hyd) out.push(['warn', `«${n.name}»: немає живлення гідравліки`]);
     if (n.online && n.warn && n.hyd) out.push(['warn', `«${n.name}»: ${n.warn}`]);
-    /* E-STOP вузла без живлення — це те саме «немає живлення», не дублюємо */
-    const flags = n.hyd || s.cab_estop ? n.flags : n.flags.split(', ').filter(f => f !== 'E-STOP').join(', ');
-    if (n.online && flags) out.push(['warn', `«${n.name}»: ${flags}`]);
+    const { bad } = splitFlags(n, s);
+    if (n.online && bad.length) out.push(['warn', `«${n.name}»: ${bad.join(', ')}`]);
   });
   return out;
 }
@@ -169,7 +182,7 @@ function renderDetail() {
     <table><tr><th>Вузол</th><th>Стан</th><th>Реле</th><th>Входи</th></tr>
     ${s.nodes.map(n => `<tr><td>${esc(n.name)}${n.watched ? '' : ' <span class="mut">(не стежимо)</span>'}</td>
       <td>${n.online ? cls(n.hyd, n.hyd ? 'на зв\'язку' : 'без живлення гідравліки', 'warn') : cls(false, 'немає зв\'язку')}
-      ${esc(n.flags)}</td><td>${esc(n.out || '—')}</td><td>${esc(n.in)}</td></tr>`).join('')}</table>
+      ${(f => `<span class="warn">${esc(f.bad.join(', '))}</span> <span class="mut">${esc(f.info.join(', '))}</span>`)(splitFlags(n, s))}</td><td>${esc(n.out || '—')}</td><td>${esc(n.in)}</td></tr>`).join('')}</table>
     <h2>Шина і пульт</h2>
     <table>
       <tr><td>Шина CAN</td><td>${cls(s.bus.ok, s.bus.ok ? 'працює' : 'немає')} · прийнято ${s.bus.rx},
