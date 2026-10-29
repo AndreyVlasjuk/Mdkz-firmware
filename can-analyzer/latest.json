@@ -1,0 +1,7 @@
+{
+  "version": "0.5.0",
+  "ota": "can-analyzer-ota-0.5.0.bin",
+  "sha256": "1cb21fad397830afbc3b4df3d1c6365290b135b1bd65c2f285e5645d59ed7174",
+  "notes": "Оновлення й дозвіл передачі зі спареного застосунку, збережені помилки DM2, скидання DM3/DM11.",
+  "full": "kabel/can-analyzer-0.5.0-esp32c3-supermini-0x0.bin"
+}
