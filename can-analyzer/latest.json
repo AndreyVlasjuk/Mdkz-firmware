@@ -1,7 +1,7 @@
 {
-  "version": "0.8.1",
-  "ota": "can-analyzer-ota-0.8.1.bin",
-  "sha256": "96303b4d03f75175d2a8f905d24dae3123d10fd36b39792e943fe92b98263ecc",
-  "notes": "Кут керма (VDC2) у таблиці J1939. Без PIN; передача — звичайний режим; VIN, пробіг і мотогодини запитуються самі.",
-  "full": "kabel/can-analyzer-0.8.1-esp32c3-supermini-0x0.bin"
+  "version": "0.9.0",
+  "ota": "can-analyzer-ota-0.9.0.bin",
+  "sha256": "5f04da435bd550556438afb1f42e78fff828ee3d805056ec81775bd4a1ea1f02",
+  "notes": "Помилки на запит: очікувані (DM6), викиди (DM12), колишні з MIL (DM23); ідентифікація блоків; тиск у гальмах і стоянкове гальмо (B), турбіна, вентилятор, холості. Кут керма, без PIN.",
+  "full": "kabel/can-analyzer-0.9.0-esp32c3-supermini-0x0.bin"
 }
