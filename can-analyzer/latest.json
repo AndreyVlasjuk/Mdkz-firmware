@@ -1,7 +1,7 @@
 {
-  "version": "0.10.0",
-  "ota": "can-analyzer-ota-0.10.0.bin",
-  "sha256": "36f71cd371e188ff98c4e3075a14a4b8d68205374518827bd36085fe70b5e7ee",
-  "notes": "Швидкість шини визначається сама (250/500/125/1000) або задається — для окремої шини датчика кута керма й ESP. Помилки DM6/DM12/DM23, ідентифікація блоків, без PIN.",
-  "full": "kabel/can-analyzer-0.10.0-esp32c3-supermini-0x0.bin"
+  "version": "0.11.0",
+  "ota": "can-analyzer-ota-0.11.0.bin",
+  "sha256": "6acc1e960adf4016a8c9637eb857186d67cc706f017046908fb20e440d7bcf0b",
+  "notes": "K-лінія (KWP2000): пошук блоків без CAN, ідентифікація, помилки — потрібен модуль на L9637D (docs/k-line.md). Швидкість шини авто, DM6/DM12/DM23, без PIN.",
+  "full": "kabel/can-analyzer-0.11.0-esp32c3-supermini-0x0.bin"
 }
