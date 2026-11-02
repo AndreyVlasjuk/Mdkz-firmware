@@ -1,7 +1,7 @@
 {
-  "version": "0.12.0",
-  "ota": "can-analyzer-ota-0.12.0.bin",
-  "sha256": "2b4f00f5e24975d48499f7cae0a0b51373c777e6d80980838a3ea77da94a3754",
-  "notes": "UDS на CAN: пошук блоків, VIN і версії програм, помилки P0123-1C, стирання. K-лінія (KWP2000) з модулем L9637D. Швидкість шини авто.",
-  "full": "kabel/can-analyzer-0.12.0-esp32c3-supermini-0x0.bin"
+  "version": "0.12.1",
+  "ota": "can-analyzer-ota-0.12.1.bin",
+  "sha256": "1f25f51c0996f521985f70ab68c82c84533ece51b2f39880995075f89e8330e5",
+  "notes": "Виправлено: з 0.9.0 нова прошивка падала після підключення телефона й плата поверталась до старої. UDS на CAN, K-лінія, швидкість шини авто.",
+  "full": "kabel/can-analyzer-0.12.1-esp32c3-supermini-0x0.bin"
 }
