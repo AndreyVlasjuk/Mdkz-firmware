@@ -1,7 +1,7 @@
 {
-  "version": "0.12.4",
-  "ota": "can-analyzer-ota-0.12.4.bin",
-  "sha256": "331aa5f6fbe7eca197297f6c847b813904bd2a7df36ccb5df4a0716ec3187c1b",
-  "notes": "Пошук блоків UDS більше не заповнює таблицю ідентифікаторів власними запитами. Bluetooth і оновлення по повітрю працюють.",
-  "full": "kabel/can-analyzer-0.12.4-esp32c3-supermini-0x0.bin"
+  "version": "0.13.0",
+  "ota": "can-analyzer-ota-0.13.0.bin",
+  "sha256": "3a555c445716885030a1547b0d7080c9419d107722483c461f47970301f3dea8",
+  "notes": "VIN і ідентифікація блоків: адресні запити й довгі відповіді RTS/CTS. Перебір параметрів UDS (шукати кут керма, тиск у гальмах у блоці ESP).",
+  "full": "kabel/can-analyzer-0.13.0-esp32c3-supermini-0x0.bin"
 }
