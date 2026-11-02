@@ -1,7 +1,7 @@
 {
-  "versionCode": 14,
-  "versionName": "0.8.0",
-  "apk": "can-monitor-0.8.0.apk",
-  "sha256": "03ec0482a69d121d1d822cb78db81fec009b3b8e95b3a6ff778dbe2ad1b1f36c",
-  "notes": "Помилки DM6/DM12/DM23, картка «Блоки» (виробник, програма, ECU), плитки гальм і стоянкового гальма. Потрібна прошивка 0.9.0."
+  "versionCode": 15,
+  "versionName": "0.8.1",
+  "apk": "can-monitor-0.8.1.apk",
+  "sha256": "7f378ed1e477de84dab10367a5feca78248c8815c5dfa97bfb7d2ee8f0ebf93e",
+  "notes": "Кут керма телефоном (картка «Кермо» → «Телефоном на кермі»), коли датчика кута на шині немає."
 }
