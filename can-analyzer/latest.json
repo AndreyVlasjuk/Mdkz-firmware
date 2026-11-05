@@ -1,7 +1,27 @@
 {
-  "version": "0.13.0",
-  "ota": "can-analyzer-ota-0.13.0.bin",
-  "sha256": "3a555c445716885030a1547b0d7080c9419d107722483c461f47970301f3dea8",
-  "notes": "VIN і ідентифікація блоків: адресні запити й довгі відповіді RTS/CTS. Перебір параметрів UDS (шукати кут керма, тиск у гальмах у блоці ESP).",
-  "full": "kabel/can-analyzer-0.13.0-esp32c3-supermini-0x0.bin"
+  "version": "0.14.0",
+  "ota": "can-analyzer-ota-0.14.0.bin",
+  "sha256": "9ec9030de98620253729de9d01fdbddb19be4264a54a4c09d611b45cc952e9bd",
+  "notes": "Прошивка аналізатора CAN (firmware/can-analyzer). Файл -0x0.bin — з адреси 0x0 через USB, ota — для оновлення по повітрю.",
+  "full": "kabel/can-analyzer-0.14.0-esp32c3-supermini-0x0.bin",
+  "boards": {
+    "esp32c3-supermini": {
+      "version": "0.14.0",
+      "ota": "can-analyzer-ota-0.14.0.bin",
+      "sha256": "9ec9030de98620253729de9d01fdbddb19be4264a54a4c09d611b45cc952e9bd",
+      "full": "kabel/can-analyzer-0.14.0-esp32c3-supermini-0x0.bin"
+    },
+    "esp32s3-lcd5": {
+      "version": "0.14.0",
+      "ota": "esp32s3-lcd5/can-analyzer-ota-0.14.0.bin",
+      "sha256": "9846b1f976f368ad36ffc1eaf0714742de5b328f859928417d925a96699a7a09",
+      "full": "kabel/can-analyzer-0.14.0-esp32s3-lcd5-0x0.bin"
+    },
+    "esp32s3-lcd43": {
+      "version": "0.14.0",
+      "ota": "esp32s3-lcd43/can-analyzer-ota-0.14.0.bin",
+      "sha256": "23974440456e62f164d8a0f9dd9832839fed1c32f0fedf8c61a6eaa7aa16e310",
+      "full": "kabel/can-analyzer-0.14.0-esp32s3-lcd43-0x0.bin"
+    }
+  }
 }
